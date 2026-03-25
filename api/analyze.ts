@@ -15,10 +15,7 @@ const KNOWLEDGE_BASE = [
 ];
 
 function extractJson(raw: string) {
-  let cleaned = raw
-    .replace(/```json/gi, "")
-    .replace(/```/g, "")
-    .trim();
+  let cleaned = raw.trim();
 
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
@@ -29,13 +26,7 @@ function extractJson(raw: string) {
 
   cleaned = cleaned.slice(start, end + 1);
 
-  cleaned = cleaned
-    .replace(/[“”]/g, '"')
-    .replace(/[‘’]/g, '"');
-
-  cleaned = cleaned.replace(/,\s*([}\]])/g, "$1");
-
-  return JSON.parse(cleaned);
+  return JSON.parse(jsonrepair(cleaned));
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
