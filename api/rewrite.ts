@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { jsonrepair } from "jsonrepair";
 
 const KNOWLEDGE_BASE = [
   "使用动词（如：领导、开发、管理）。",
@@ -13,21 +12,6 @@ const KNOWLEDGE_BASE = [
   "在相关地方突出领导力和软技能。",
   "根据具体职位定制总结。"
 ];
-function extractJson(raw: string) {
-  let cleaned = raw.trim();
-
-  const start = cleaned.indexOf("{");
-  const end = cleaned.lastIndexOf("}");
-
-  if (start === -1 || end === -1 || end <= start) {
-    throw new Error(`未找到有效 JSON 对象。raw=${raw}`);
-  }
-
-  cleaned = cleaned.slice(start, end + 1);
-
-  return JSON.parse(jsonrepair(cleaned));
-}
-
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -37,10 +21,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { experience, jd } = req.body ?? {};
+    const { resume, jd } = req.body ?? {};
 
-    if (!experience || !jd) {
-      return res.status(400).json({ error: "experience 和 jd 不能为空" });
+    if (!resume || !jd) {
+      return res.status(400).json({
+        error: "resume 和 jd 不能为空",
+        debug: {
+          hasResume: !!resume,
+          hasJd: !!jd,
+        },
+      });
     }
 
     const apiKey = process.env.KIMI_API_KEY;
@@ -49,29 +39,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const prompt = `
-任务：改写以下经历片段，使其更好地与 JD 对齐。
-经历：${experience}
+任务：分析简历与 JD 的匹配度。
+简历：${resume}
 JD：${jd}
 规则：${KNOWLEDGE_BASE.join("\n")}
 
-约束：
-1. 不得虚构事实。
-2. 优化表达和影响力。
-3. 使用动词，并根据原件尽可能量化。
-
 输出 JSON 格式：
 {
-  "original": "原始文本",
-  "optimized": "优化后的改写版本",
-  "explanation": "修改说明（为什么这样改）",
-  "evidence": "作为依据的原始简历引用"
+  "highlights": ["匹配亮点，需引用简历内容"],
+  "gaps": ["根据 JD 要求的缺口"],
+  "summary": "整体匹配度总结",
+  "evidence": ["支持分析的具体简历/JD 引用"]
 }
 
-请使用中文回答。
-只返回合法 JSON，不要返回 markdown，不要返回代码块。
-所有 key 和字符串值都必须使用英文双引号 " 包裹。
-禁止使用中文引号（如 “ ” 和 ‘ ’）。
-必须完整返回 original、optimized、explanation、evidence 这 4 个字段。
+要求：
+1. 请使用中文回答。
+2. 只返回合法 JSON。
+3. 所有 key 和字符串值都必须使用英文双引号 " 包裹。
+4. 必须完整返回 highlights、gaps、summary、evidence 这 4 个字段。
+5. 不要返回 markdown，不要返回代码块，不要附加解释文字。
 `;
 
     const response = await fetch("https://api.moonshot.cn/v1/chat/completions", {
@@ -82,11 +68,12 @@ JD：${jd}
       },
       body: JSON.stringify({
         model: "moonshot-v1-8k",
-        temperature: 0.2,
+        temperature: 0.3,
+        response_format: { type: "json_object" },
         messages: [
           {
             role: "system",
-            content: "你是严格不编造事实的简历改写助手。",
+            content: "你是一个严格遵循事实、不编造内容的 AI 求职助手。",
           },
           {
             role: "user",
@@ -116,15 +103,20 @@ JD：${jd}
       });
     }
 
-    const content = data?.choices?.[0]?.message?.content ?? "";
+    const content = data?.choices?.[0]?.message?.content;
+
+    if (!content) {
+      return res.status(500).json({
+        error: "模型未返回 content",
+        raw: data,
+      });
+    }
 
     try {
-      const parsed = extractJson(content);
-      return res.status(200).json(parsed);
-    } catch (e: any) {
+      return res.status(200).json(JSON.parse(content));
+    } catch {
       return res.status(500).json({
-        error: "模型返回内容无法解析为 JSON",
-        detail: e?.message || "unknown parse error",
+        error: "模型返回的 content 不是合法 JSON",
         modelContent: content,
       });
     }
