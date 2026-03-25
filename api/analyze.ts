@@ -28,12 +28,10 @@ function extractJson(raw: string) {
 
   cleaned = cleaned.slice(start, end + 1);
 
-  // 把中文/弯引号替换成标准英文双引号
   cleaned = cleaned
     .replace(/[“”]/g, '"')
     .replace(/[‘’]/g, '"');
 
-  // 去掉尾随逗号
   cleaned = cleaned.replace(/,\s*([}\]])/g, "$1");
 
   return JSON.parse(cleaned);
@@ -80,9 +78,12 @@ JD：${jd}
 
 请使用中文回答。
 只返回合法 JSON，不要返回 markdown，不要返回代码块，不要附加解释文字。
+所有 key 和字符串值都必须使用英文双引号 " 包裹。
+禁止使用中文引号（如 “ ” 和 ‘ ’）。
+必须完整返回 highlights、gaps、summary、evidence 这 4 个字段。
 `;
 
-    const upstream = await fetch("https://api.moonshot.cn/v1/chat/completions", {
+    const response = await fetch("https://api.moonshot.cn/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -104,7 +105,7 @@ JD：${jd}
       }),
     });
 
-    const text = await upstream.text();
+    const text = await response.text();
 
     let data: any = null;
     try {
@@ -112,15 +113,14 @@ JD：${jd}
     } catch {
       return res.status(500).json({
         error: "上游返回的不是合法 JSON",
-        upstreamStatus: upstream.status,
+        upstreamStatus: response.status,
         raw: text,
       });
     }
 
-    if (!upstream.ok) {
-      return res.status(upstream.status).json({
+    if (!response.ok) {
+      return res.status(response.status).json({
         error: data?.error?.message || "Kimi request failed",
-        upstreamStatus: upstream.status,
         raw: data,
       });
     }
@@ -130,20 +130,16 @@ JD：${jd}
     try {
       const parsed = extractJson(content);
       return res.status(200).json(parsed);
-    } catch (parseError: any) {
+    } catch (e: any) {
       return res.status(500).json({
         error: "模型返回内容无法解析为 JSON",
-        detail: parseError?.message || "unknown parse error",
+        detail: e?.message || "unknown parse error",
         modelContent: content,
       });
     }
   } catch (error: any) {
-    console.error("analyze handler error:", error);
-
     return res.status(500).json({
       error: error?.message || "Internal server error",
-      stack:
-        process.env.NODE_ENV === "development" ? error?.stack : undefined,
     });
   }
 }
