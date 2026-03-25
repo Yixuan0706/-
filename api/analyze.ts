@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { jsonrepair } from "jsonrepair";
 
 const KNOWLEDGE_BASE = [
   "使用动词（如：领导、开发、管理）。",
