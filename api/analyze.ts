@@ -79,7 +79,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const content = data?.choices?.[0]?.message?.content || "{}";
-    return res.status(200).json(JSON.parse(content));
+
+const cleaned = content
+  .replace(/```json/g, "")
+  .replace(/```/g, "")
+  .trim();
+
+let parsed;
+
+try {
+  parsed = JSON.parse(cleaned);
+} catch (e) {
+  return res.status(500).json({
+    error: "JSON parse failed",
+    raw: content,
+  });
+}
+
+return res.status(200).json(parsed);
   } catch (error: any) {
     return res.status(500).json({
       error: error?.message || "Internal server error",
