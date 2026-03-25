@@ -27,6 +27,15 @@ function extractJson(raw: string) {
   }
 
   cleaned = cleaned.slice(start, end + 1);
+
+  // 把中文/弯引号替换成标准英文双引号
+  cleaned = cleaned
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, '"');
+
+  // 去掉尾随逗号
+  cleaned = cleaned.replace(/,\s*([}\]])/g, "$1");
+
   return JSON.parse(cleaned);
 }
 
