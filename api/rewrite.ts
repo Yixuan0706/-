@@ -85,10 +85,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const content = data?.choices?.[0]?.message?.content || "{}";
 
-const cleaned = content
+const content = data?.choices?.[0]?.message?.content || "";
+
+// 1. 去 markdown
+let cleaned = content
   .replace(/```json/g, "")
   .replace(/```/g, "")
   .trim();
+
+// 2. 截取第一个 JSON 对象（关键修复）
+const start = cleaned.indexOf("{");
+const end = cleaned.lastIndexOf("}");
+
+if (start !== -1 && end !== -1) {
+  cleaned = cleaned.slice(start, end + 1);
+}
 
 let parsed;
 
@@ -97,6 +108,7 @@ try {
 } catch (e) {
   return res.status(500).json({
     error: "JSON parse failed",
+    cleaned,
     raw: content,
   });
 }
