@@ -32,9 +32,9 @@ async function postJSON<T>(url: string, body: unknown): Promise<T> {
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    throw new Error(data?.error || `请求失败: ${res.status}`);
-  }
-
+  console.error("API ERROR:", data); // 👈 加这个
+  throw new Error(data?.error || `请求失败: ${res.status}`);
+}
   return data as T;
 }
 
