@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { jsonrepair } from "jsonrepair";
 
 const KNOWLEDGE_BASE = [
   "使用动词（如：领导、开发、管理）。",
@@ -13,21 +12,6 @@ const KNOWLEDGE_BASE = [
   "在相关地方突出领导力和软技能。",
   "根据具体职位定制总结。"
 ];
-
-function extractJson(raw: string) {
-  let cleaned = raw.trim();
-
-  const start = cleaned.indexOf("{");
-  const end = cleaned.lastIndexOf("}");
-
-  if (start === -1 || end === -1 || end <= start) {
-    throw new Error(`未找到有效 JSON 对象。raw=${raw}`);
-  }
-
-  cleaned = cleaned.slice(start, end + 1);
-
-  return JSON.parse(jsonrepair(cleaned));
-}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -68,11 +52,12 @@ JD：${jd}
   "evidence": ["支持分析的具体简历/JD 引用"]
 }
 
-请使用中文回答。
-只返回合法 JSON，不要返回 markdown，不要返回代码块，不要附加解释文字。
-所有 key 和字符串值都必须使用英文双引号 " 包裹。
-禁止使用中文引号（如 “ ” 和 ‘ ’）。
-必须完整返回 highlights、gaps、summary、evidence 这 4 个字段。
+要求：
+1. 请使用中文回答。
+2. 只返回合法 JSON。
+3. 所有 key 和字符串值都必须使用英文双引号 " 包裹。
+4. 必须完整返回 highlights、gaps、summary、evidence 这 4 个字段。
+5. 不要返回 markdown，不要返回代码块，不要附加解释文字。
 `;
 
     const response = await fetch("https://api.moonshot.cn/v1/chat/completions", {
@@ -84,6 +69,7 @@ JD：${jd}
       body: JSON.stringify({
         model: "moonshot-v1-8k",
         temperature: 0.3,
+        response_format: { type: "json_object" },
         messages: [
           {
             role: "system",
@@ -117,15 +103,20 @@ JD：${jd}
       });
     }
 
-    const content = data?.choices?.[0]?.message?.content ?? "";
+    const content = data?.choices?.[0]?.message?.content;
+
+    if (!content) {
+      return res.status(500).json({
+        error: "模型未返回 content",
+        raw: data,
+      });
+    }
 
     try {
-      const parsed = extractJson(content);
-      return res.status(200).json(parsed);
-    } catch (e: any) {
+      return res.status(200).json(JSON.parse(content));
+    } catch {
       return res.status(500).json({
-        error: "模型返回内容无法解析为 JSON",
-        detail: e?.message || "unknown parse error",
+        error: "模型返回的 content 不是合法 JSON",
         modelContent: content,
       });
     }
