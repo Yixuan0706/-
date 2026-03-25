@@ -29,12 +29,21 @@ async function postJSON<T>(url: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
   });
 
-  const data = await res.json().catch(() => ({}));
+  const text = await res.text();
+  let data: any = null;
+
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    console.error("API NON-JSON RESPONSE:", text);
+    throw new Error(`接口返回的不是 JSON: ${res.status}`);
+  }
 
   if (!res.ok) {
-  console.error("API ERROR:", data); // 👈 加这个
-  throw new Error(data?.error || `请求失败: ${res.status}`);
-}
+    console.error("API ERROR:", data);
+    throw new Error(data?.error || `请求失败: ${res.status}`);
+  }
+
   return data as T;
 }
 
