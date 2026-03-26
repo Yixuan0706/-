@@ -144,7 +144,14 @@ ${jd}
     }
 
     try {
-      return res.status(200).json(JSON.parse(content));
+      const parsed = JSON.parse(content);
+
+      return res.status(200).json({
+        original: typeof parsed?.original === "string" ? parsed.original : "",
+        optimized: typeof parsed?.optimized === "string" ? parsed.optimized : "",
+        explanation: typeof parsed?.explanation === "string" ? parsed.explanation : "",
+        evidence: typeof parsed?.evidence === "string" ? parsed.evidence : "",
+});
     } catch {
       return res.status(500).json({
         error: "模型返回的 content 不是合法 JSON",
