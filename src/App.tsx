@@ -441,35 +441,61 @@ export default function App() {
                 )}
 
                 {currentTask === 'rewrite' && result && (
-                  <div className="grid lg:grid-cols-2 gap-8">
-                    <div className="space-y-8">
-                      <div className="bg-white rounded-[32px] border border-slate-200/60 p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                        <h3 className="text-[13px] font-medium uppercase tracking-widest text-slate-400 mb-6">原始片段</h3>
-                        <div className="p-5 rounded-[20px] bg-slate-50/50 border border-slate-100 text-slate-500 text-[15px] leading-[1.8] font-light">
-                          {result.original}
-                        </div>
-                      </div>
-                      <div className="bg-white rounded-[32px] border border-slate-200/60 p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                        <h3 className="text-[13px] font-medium uppercase tracking-widest text-slate-400 mb-6">修改逻辑</h3>
-                        <p className="text-slate-700 text-[15px] leading-[1.8] font-light">{result.explanation}</p>
-                      </div>
-                    </div>
-                    <div className="space-y-8">
-                      <div className="bg-slate-900 text-white rounded-[32px] p-10 shadow-[0_20px_40px_rgb(15,23,42,0.2)]">
-                        <h3 className="text-[13px] font-medium uppercase tracking-widest text-slate-400 mb-6">优化后的版本</h3>
-                        <p className="text-[18px] font-normal leading-[1.8] text-slate-100">{result.optimized}</p>
-                      </div>
-                      <div className="bg-white rounded-[32px] border border-slate-200/60 p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                        <h3 className="text-[13px] font-medium uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
-                          <Quote size={14} /> 引用依据
-                        </h3>
-                        <div className="text-[13px] text-slate-500 bg-slate-50/50 p-4 rounded-[16px] border border-slate-100 font-light leading-relaxed">
-                          {result.evidence}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                 <div className="space-y-8">
+    
+    {/* 顶部标题 + 操作 */}
+     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <h3 className="text-[20px] font-semibold text-slate-900">简历改写建议</h3>
+        <p className="text-slate-500 text-[14px] mt-1">已根据目标 JD 优化表达，可直接用于简历。</p>
+      </div>
+      <div className="flex gap-3">
+        <button 
+          onClick={() => runTask('rewrite')}
+          className="text-[13px] px-4 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50"
+        >
+          重新生成
+        </button>
+        <button 
+          onClick={() => navigator.clipboard.writeText(result.optimized || '')}
+          className="text-[13px] px-4 py-2 rounded-full bg-slate-900 text-white hover:bg-slate-800"
+        >
+          复制结果
+        </button>
+      </div>
+    </div>
+
+    {/* 双栏对比 */}
+    <div className="grid lg:grid-cols-2 gap-8">
+      
+      {/* 原始内容 */}
+      <div className="bg-white rounded-[28px] border border-slate-200/60 p-8 shadow-sm">
+        <h4 className="text-[12px] uppercase tracking-widest text-slate-400 mb-4">原始内容</h4>
+        <div className="bg-slate-50 rounded-[16px] p-5 text-[15px] text-slate-600 leading-[1.8] whitespace-pre-wrap">
+          {result.original}
+        </div>
+      </div>
+
+      {/* 优化内容（重点） */}
+      <div className="bg-slate-900 text-white rounded-[28px] p-8 shadow-lg">
+        <h4 className="text-[12px] uppercase tracking-widest text-slate-400 mb-4">优化后内容</h4>
+        <div className="text-[16px] leading-[1.9] whitespace-pre-wrap">
+          {result.optimized}
+        </div>
+      </div>
+
+    </div>
+
+    {/* 改写说明 */}
+    <div className="bg-white rounded-[28px] border border-slate-200/60 p-8 shadow-sm">
+      <h4 className="text-[12px] uppercase tracking-widest text-slate-400 mb-4">改写说明</h4>
+      <div className="text-[15px] text-slate-700 leading-[1.8] whitespace-pre-wrap">
+        {result.explanation}
+      </div>
+    </div>
+
+  </div>
+)}
 
                 {currentTask === 'interview' && result && (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
