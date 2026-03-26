@@ -150,9 +150,10 @@ ${jd}
 
       return res.status(200).json({
         original: typeof parsed?.original === "string" ? parsed.original : "",
-        optimized: typeof parsed?.optimized === "string" ? parsed.optimized : "",
+        optimized: Array.isArray(parsed?.optimized)
+          ? parsed.optimized.filter((item: unknown) => typeof item === "string")
+          : [], 
         explanation: typeof parsed?.explanation === "string" ? parsed.explanation : "",
-        evidence: typeof parsed?.evidence === "string" ? parsed.evidence : "",
 });
     } catch {
       return res.status(500).json({
