@@ -558,8 +558,22 @@ export default function App() {
                         <h4 className="text-[12px] uppercase tracking-widest text-slate-400 mb-4">
                           优化后内容
                         </h4>
-                        <div className="text-[16px] leading-[1.9] whitespace-pre-wrap break-words text-slate-100">
-                          {result.optimized}
+                        <div className="space-y-4">
+                          {Array.isArray(result.optimized) && result.optimized.length > 0 ? (
+                            result.optimized.map((item: string, index: number) => (
+                              <div
+                                key={index}
+                                className="flex items-start gap-3 text-[16px] leading-[1.9] text-slate-100"
+                              >
+                                <span className="mt-[10px] h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                                <span>{item}</span>
+                              </div>
+                            ))
+                          ) : (
+                           <div className="text-[16px] leading-[1.9] text-slate-300">
+                            暂无优化结果
+                           </div>
+                          )}
                         </div>
                       </div>
                     </div>
